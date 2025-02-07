@@ -1,18 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
+// Use redis which have {key: roomId, message}
+
 function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const roomIdRef = useRef<HTMLInputElement>(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
+  const [roomIds, setRoomIds] = useState<string[]>([])
 
   const handleJoinRoom = () => {
     if(socket && roomIdRef.current){
+      setRoomIds([...roomIds, roomIdRef.current.value])
       socket.send(JSON.stringify({
         type: "join",
         payload: {
-          roomId: roomIdRef.current.value
+          roomId: roomIdRef.current.value,
+          username: "varun"
         }
       }));
     }
@@ -22,15 +27,17 @@ function App() {
       socket.send(JSON.stringify({
         type: "chat",
         payload: {
-          message: inputRef.current.value
+          message: inputRef.current.value,
         }
       }));
     }
   };
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:3000");
-    ws.onmessage = (event) => {
-      setMessages((m: string[]) => [...m, event.data]);
+    ws.onmessage = async (event) => {
+      console.log(event)
+      const data = await JSON.parse(event.data);
+      setMessages((m: string[]) => [...m, data]);
     };
     setSocket(ws);
 
